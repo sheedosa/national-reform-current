@@ -55,7 +55,7 @@
   window.addEventListener('resize', function () { measure(); onScroll(); }, { passive: true });
   if ('ResizeObserver' in window) new ResizeObserver(measure).observe(document.body);
   window.addEventListener('load', measure);
-  measure(); onScroll();
+  requestAnimationFrame(function () { measure(); onScroll(); });
 
   /* ---- Reveal on scroll + active nav link ---- */
   if ('IntersectionObserver' in window) {
