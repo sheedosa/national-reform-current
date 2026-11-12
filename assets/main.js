@@ -3,37 +3,26 @@
   'use strict';
 
   /* ---- Settings: fill these in when available ---- */
-  var EMAIL = '';                         // e.g. 'office@example.com' — the email button appears once set
-  var PORTRAIT = 'assets/portrait.jpg';   // drop a photo at this path and it replaces the logo in the Nasser Al-Senussi section
+  var EMAIL = '';     // e.g. 'office@example.com' — the email button appears once set
+  var PORTRAIT = '';  // e.g. 'assets/portrait.jpg' — shows a photo in the Nasser Al-Senussi section
 
   var root = document.documentElement;
-  var body = document.body;
+  var base = root.getAttribute('data-base') || './';
   var header = document.querySelector('.site-header');
-  var TITLES = {
-    ar: 'التيار الوطني الإصلاحي | المواطن أولاً',
-    en: 'National Reform Movement | Citizens first'
-  };
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---- Language ---- */
-  function applyLang(lang) {
-    root.lang = lang;
-    root.dir = lang === 'ar' ? 'rtl' : 'ltr';
-    document.title = TITLES[lang];
-    try { localStorage.setItem('lang', lang); } catch (e) {}
-  }
-  function setLang(lang, animate) {
-    if (!animate) { applyLang(lang); return; }
-    body.classList.add('lang-fade');
-    setTimeout(function () {
-      applyLang(lang);
-      body.classList.remove('lang-fade');
-    }, 220);
-  }
-  document.querySelectorAll('.lang').forEach(function (b) {
-    b.addEventListener('click', function () {
-      setLang(root.lang === 'ar' ? 'en' : 'ar', true);
+  /* ---- Language switch: short fade, then go to the other page ---- */
+  var sw = document.querySelector('a.lang');
+  if (sw && !reduce) {
+    sw.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.button) return;
+      e.preventDefault();
+      document.body.classList.add('lang-fade');
+      var href = sw.href + location.hash;
+      setTimeout(function () { location.href = href; }, 180);
     });
-  });
+  }
+  window.addEventListener('pageshow', function () { document.body.classList.remove('lang-fade'); });
 
   /* ---- Mobile menu ---- */
   var menuBtn = document.querySelector('.menu-btn');
@@ -45,29 +34,28 @@
     var open = root.classList.toggle('menu-open');
     menuBtn.setAttribute('aria-expanded', String(open));
   });
-  document.querySelectorAll('.nav a').forEach(function (a) {
-    a.addEventListener('click', closeMenu);
-  });
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') closeMenu();
-  });
+  document.querySelectorAll('.nav a').forEach(function (a) { a.addEventListener('click', closeMenu); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
 
-  /* ---- Scroll: thread progress + header behaviour ---- */
+  /* ---- Scroll: progress line + header (layout read once, not per frame) ---- */
   var thread = document.querySelector('.thread i');
-  var lastY = 0, ticking = false;
+  var max = 1, lastY = 0, ticking = false;
+  function measure() { max = Math.max(1, root.scrollHeight - window.innerHeight); }
   function onScroll() {
     var y = window.scrollY;
-    var max = document.documentElement.scrollHeight - window.innerHeight;
-    thread.style.setProperty('--p', max > 0 ? Math.min(1, y / max).toFixed(4) : 0);
+    thread.style.transform = 'scaleY(' + Math.min(1, y / max).toFixed(4) + ')';
     header.classList.toggle('scrolled', y > 24);
-    header.classList.toggle('hide', y > lastY && y > 320);
+    header.classList.toggle('hide', y > lastY && y > 320 && !root.classList.contains('menu-open'));
     lastY = y;
     ticking = false;
   }
   window.addEventListener('scroll', function () {
     if (!ticking) { ticking = true; requestAnimationFrame(onScroll); }
   }, { passive: true });
-  onScroll();
+  window.addEventListener('resize', function () { measure(); onScroll(); }, { passive: true });
+  if ('ResizeObserver' in window) new ResizeObserver(measure).observe(document.body);
+  window.addEventListener('load', measure);
+  measure(); onScroll();
 
   /* ---- Reveal on scroll + active nav link ---- */
   if ('IntersectionObserver' in window) {
@@ -84,8 +72,9 @@
       entries.forEach(function (en) {
         var a = links[en.target.id];
         if (a && en.isIntersecting) {
-          Object.keys(links).forEach(function (k) { links[k].classList.remove('active'); });
+          Object.keys(links).forEach(function (k) { links[k].classList.remove('active'); links[k].removeAttribute('aria-current'); });
           a.classList.add('active');
+          a.setAttribute('aria-current', 'true');
         }
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
@@ -103,15 +92,17 @@
     mail.href = 'mailto:' + EMAIL;
     mail.hidden = false;
   }
-  var probe = new Image();
-  probe.onload = function () {
-    var frame = document.querySelector('.portrait');
-    probe.alt = '';
-    probe.className = 'photo';
-    root.classList.add('has-photo');
-    frame.appendChild(probe);
-  };
-  probe.src = PORTRAIT;
+  if (PORTRAIT) {
+    var img = new Image();
+    img.alt = '';
+    img.decoding = 'async';
+    img.className = 'photo';
+    img.onload = function () {
+      document.querySelector('.portrait').appendChild(img);
+      root.classList.add('has-photo');
+    };
+    img.src = base + PORTRAIT;
+  }
 
   /* ---- Start the hero sequence once fonts are in ---- */
   function ready() { requestAnimationFrame(function () { root.classList.add('ready'); }); }
@@ -119,6 +110,6 @@
     var done = false;
     var go = function () { if (!done) { done = true; ready(); } };
     document.fonts.ready.then(go);
-    setTimeout(go, 1200);
+    setTimeout(go, 900);
   } else { ready(); }
 })();
