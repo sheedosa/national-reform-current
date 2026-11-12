@@ -1,4 +1,4 @@
-# التيار الوطني الإصلاحي — National Reform Current
+# التيار الوطني الإصلاحي — National Reform Movement
 
 Bilingual (Arabic / English) single-page site. Plain HTML, CSS and JavaScript: no build step, no dependencies, fonts self-hosted.
 

@@ -1,4 +1,4 @@
-/* National Reform Current — site behaviour (no dependencies) */
+/* National Reform Movement — site behaviour (no dependencies) */
 (function () {
   'use strict';
 
@@ -11,7 +11,7 @@
   var header = document.querySelector('.site-header');
   var TITLES = {
     ar: 'التيار الوطني الإصلاحي | المواطن أولاً',
-    en: 'National Reform Current | The citizen first'
+    en: 'National Reform Movement | Citizens first'
   };
 
   /* ---- Language ---- */
@@ -108,6 +108,7 @@
     var frame = document.querySelector('.portrait');
     probe.alt = '';
     probe.className = 'photo';
+    root.classList.add('has-photo');
     frame.appendChild(probe);
   };
   probe.src = PORTRAIT;
